@@ -20,10 +20,10 @@ int32_t old_encoder_val = 0;   //initializing previous encoder value to zero
 float feedback_speed = 0.0f;   //initializing speed variable to zero
 
 //PID constants
-float T_s = 0.0f;   //initializing sampling time variable to zero
-float kp = 0.0f;   //initializing proportional gain variable to zero
-float ki = 0.0f;   //initializing integral gain variable to zero
-float kd = 0.0f;   //initializing derivative gain variable to zero
+float T_s = 0.01f;   //initializing sampling time constant
+float kp = 0.0f;   //initializing proportional gain constant
+float ki = 0.0f;   //initializing integral gain constant
+float kd = 0.0f;   //initializing derivative gain constant
 
 //setting up command speed and control output limits for PID control algorithm
 float command_speed = 41.0f;  //initializing command speed variable to 41 RPM (desired speed for motor)
@@ -148,6 +148,7 @@ void TIM14_IRQHandler(void)   //TIM14 interupt handler for encoder conversion
     int32_t current_encoder_val = TIM3->CNT;   //recording the CNT value for comparison
     int32_t encoder_diff = current_encoder_val - old_encoder_val;   //calculating the difference in encoder counts
     feedback_speed = ((float)encoder_diff)*(750.0f/1048.0f);  //calculating speed in RPM
+    run_PID(feedback_speed, command_speed);   //running PID control algorithm to adjust motor speed based on feedback and command speeds
     old_encoder_val = current_encoder_val;
 
 }
@@ -162,6 +163,18 @@ void run_PID(float feedback_speed, float command_speed)    //function to run PID
 
     //calculating control output using PID control algorithm
     float u = u_two_steps + a*e + b*e_one_step + c*e_two_steps;
+
+    //saturating control output to upper and lower limits
+    if (u > upper_limit)
+    {
+        u = upper_limit;
+    }
+    else if (u < lower_limit)
+    {
+        u = lower_limit;
+    }
+
+    TIM2->CCR3 = (uint32_t)u;   //setting duty cycle based on control output
 
     //updating previous control outputs and errors for next iteration
     u_two_steps = u_one_step;
