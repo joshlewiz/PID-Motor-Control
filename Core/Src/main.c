@@ -131,10 +131,10 @@ void printToLCD(void)   //function to print speed to LCD
     lcd_putstring(buffer);
 }
 
-void initTIM14(void)    //setting up TIM14 for encoder conversion every 0.2s
+void initTIM14(void)    //setting up TIM14 for encoder conversion every 0.01s
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; //enable clock
-    TIM14->PSC = 74;
+    TIM14->PSC = 749;
     TIM14->ARR = 63999;
     TIM14->DIER |= TIM_DIER_UIE; //enable interupt on update event
     NVIC_EnableIRQ(TIM14_IRQn); //enable TIM14 interupt in NVIC
@@ -147,7 +147,7 @@ void TIM14_IRQHandler(void)   //TIM14 interupt handler for encoder conversion
     TIM14->SR &= ~TIM_SR_UIF;    //clear the update interrupt flag
     int32_t current_encoder_val = TIM3->CNT;   //recording the CNT value for comparison
     int32_t encoder_diff = current_encoder_val - old_encoder_val;   //calculating the difference in encoder counts
-    feedback_speed = ((float)encoder_diff)*(75.0f/1048.0f);  //calculating speed in RPM
+    feedback_speed = ((float)encoder_diff)*(750.0f/1048.0f);  //calculating speed in RPM
     old_encoder_val = current_encoder_val;
 
 }
