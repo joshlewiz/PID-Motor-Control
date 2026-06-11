@@ -17,8 +17,24 @@
 //====================================================================
 
 int32_t old_encoder_val = 0;   //initializing previous encoder value to zero
-float speed = 0.0f;   //initializing speed variable to zero
+float feedback_speed = 0.0f;   //initializing speed variable to zero
 
+//PID constants
+float T_s = 0.0f;   //initializing sampling time variable to zero
+float kp = 0.0f;   //initializing proportional gain variable to zero
+float ki = 0.0f;   //initializing integral gain variable to zero
+float kd = 0.0f;   //initializing derivative gain variable to zero
+
+//setting up command speed and control output limits for PID control algorithm
+float command_speed = 41.0f;  //initializing command speed variable to 41 RPM (desired speed for motor)
+float upper_limit = 200.0f ;   //initializing upper limit for control output to 200 (maximum duty cycle)
+float lower_limit = 0.0f;   //initializing lower limit for control output to 0 (minimum duty cycle)
+
+//setting up errors and control actions for PID control algorithm
+float e_one_step = 0.0f;   //initializing previous error variable for one step back to zero
+float e_two_steps = 0.0f;  //initializing previous error variable for two steps back to zero
+float u_one_step = 0.0f;   //initializing previous control output variable for one step back to zero
+float u_two_steps = 0.0f;   //initializing previous control output variable for two steps back to zero
 //====================================================================
 // FUNCTION DECLARATIONS
 //====================================================================
@@ -30,6 +46,7 @@ void initTIM3(void);
 void initTIM14(void);
 void TIM14_IRQHandler(void);
 void printToLCD(void);
+void run_PID(float feedback_speed, float command_speed);
 
 //====================================================================
 // MAIN FUNCTION
@@ -72,7 +89,7 @@ void ResetClockTo48Mhz(void)
     while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
 }
 
-void initGPIOB(void)
+void initGPIOB(void)    //initializing GPIOB for TIM2_CH3 (PB10) and TIM3_CH1, TIM3_CH2 (PB4, PB5) for encoder input
 {
     RCC->AHBENR |= RCC_AHBENR_GPIOBEN;  //enabling clock
     GPIOB->MODER |= GPIO_MODER_MODER10_1 | GPIO_MODER_MODER4_1 | GPIO_MODER_MODER5_1; //setting pin 4,5,10 to alternate function mode
@@ -83,7 +100,7 @@ void initGPIOB(void)
     GPIOB->AFR[0] |= 0x1 << 20; //setting alternate function to AF1 (TIM3_CH2, PB5)
 }
 
-void initTIM2(void)
+void initTIM2(void) //timer for PWM generation for motor control
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; //enabling clock
     TIM2->PSC = 23;
@@ -108,13 +125,13 @@ void initTIM3(void) //setting up encoder mode for TIM3
 void printToLCD(void)   //function to print speed to LCD
 {
     char buffer[20];
-    sprintf(buffer, "Speed: %d RPM", (int)speed);  //formatting encoder count into string
+    sprintf(buffer, "Speed: %d RPM", (int)feedback_speed);  //formatting encoder count into string
     lcd_command(CLEAR);
     delay(2000);
     lcd_putstring(buffer);
 }
 
-void initTIM14(void)    //setting up TIM14 for encoder conversion
+void initTIM14(void)    //setting up TIM14 for encoder conversion every 0.2s
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; //enable clock
     TIM14->PSC = 74;
@@ -130,9 +147,27 @@ void TIM14_IRQHandler(void)   //TIM14 interupt handler for encoder conversion
     TIM14->SR &= ~TIM_SR_UIF;    //clear the update interrupt flag
     int32_t current_encoder_val = TIM3->CNT;   //recording the CNT value for comparison
     int32_t encoder_diff = current_encoder_val - old_encoder_val;   //calculating the difference in encoder counts
-    speed = ((float)encoder_diff)*(75.0f/1048.0f);  //calculating speed in RPM
+    feedback_speed = ((float)encoder_diff)*(75.0f/1048.0f);  //calculating speed in RPM
     old_encoder_val = current_encoder_val;
 
+}
+
+void run_PID(float feedback_speed, float command_speed)    //function to run PID control algorithm
+{
+    float e = command_speed - feedback_speed;   //calculating error
+
+    float a = kp + ((T_s*ki)/2) +((2*kd)/T_s);   //calculating coefficient a for PID control algorithm
+    float b = (T_s*ki)-4*(kd/T_s);   //calculating coefficient b for PID control algorithm
+    float c = -kp + ((T_s*ki)/2) + 2*(kd/T_s);   //calculating coefficient c for PID control algorithm
+
+    //calculating control output using PID control algorithm
+    float u = u_two_steps + a*e + b*e_one_step + c*e_two_steps;
+
+    //updating previous control outputs and errors for next iteration
+    u_two_steps = u_one_step;
+    u_one_step = u;
+    e_two_steps = e_one_step;
+    e_one_step = e;
 }
 //********************************************************************
 // END OF PROGRAM
