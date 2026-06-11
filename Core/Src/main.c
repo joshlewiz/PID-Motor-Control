@@ -134,8 +134,8 @@ void printToLCD(void)   //function to print speed to LCD
 void initTIM14(void)    //setting up TIM14 for encoder conversion every 0.01s
 {
     RCC->APB1ENR |= RCC_APB1ENR_TIM14EN; //enable clock
-    TIM14->PSC = 749;
-    TIM14->ARR = 63999;
+    TIM14->PSC = 74;
+    TIM14->ARR = 6399;
     TIM14->DIER |= TIM_DIER_UIE; //enable interupt on update event
     NVIC_EnableIRQ(TIM14_IRQn); //enable TIM14 interupt in NVIC
     TIM14->CR1 |= TIM_CR1_CEN;  //start timer
