@@ -39,9 +39,7 @@ float u_one_step = 0.0f;   //initializing previous control output variable for o
 float u_two_steps = 0.0f;   //initializing previous control output variable for two steps back to zero
 
 //setting up log arrays
-float command_speed_log[LOG_SIZE];   //array to log command speeds for analysis
-float actual_speed_log[LOG_SIZE];  //array to log feedback speeds for analysis
-float control_output_log[LOG_SIZE];   //array to log control outputs for analysis
+uint16_t actual_speed_log[LOG_SIZE];  //array to log feedback speeds for analysis
 int log_index = 0;   //initializing log index variable to zero
 
 //====================================================================
@@ -159,6 +157,13 @@ void TIM14_IRQHandler(void)   //TIM14 interupt handler for encoder conversion
     feedback_speed = ((float)encoder_diff)*(750.0f/1048.0f);  //calculating speed in RPM
     run_PID(feedback_speed, command_speed);   //running PID control algorithm to adjust motor speed based on feedback and command speeds
     old_encoder_val = current_encoder_val;
+
+    //setting up logging for analysis
+    if (log_index<LOG_SIZE)
+    {
+        actual_speed_log[log_index] = (uint16_t)feedback_speed;   //logging actual speed
+        log_index++;    //incrementing log index for next entry
+    }
 
 }
 
