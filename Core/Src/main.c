@@ -23,9 +23,9 @@ float feedback_speed = 0.0f;   //initializing speed variable to zero
 
 //PID constants
 float T_s = 0.01f;   //initializing sampling time constant
-float kp = 0.0f;   //initializing proportional gain constant
-float ki = 0.0f;   //initializing integral gain constant
-float kd = 0.0f;   //initializing derivative gain constant
+float kp = 15.0f;   //initializing proportional gain constant
+float ki = 1.0f;   //initializing integral gain constant
+float kd = 0.01f;   //initializing derivative gain constant
 
 //setting up command speed and control output limits for PID control algorithm
 float command_speed = 41.0f;  //initializing command speed variable to 41 RPM (desired speed for motor)
@@ -112,7 +112,7 @@ void initTIM2(void) //timer for PWM generation for motor control
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN; //enabling clock
     TIM2->PSC = 23;
     TIM2->ARR = 199;
-    TIM2->CCR3 = 100;    //setting duty cycle to 50% | duty cycle = (CCR3/(ARR+1))*100
+    TIM2->CCR3 = 0;    //setting duty cycle to 0% initially | duty cycle = (CCR3/(ARR+1))*100
     TIM2->CCMR2 |= TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1; //setting output compare mode to PWM mode 1 (channel 3)
     TIM2->CCER |= TIM_CCER_CC3E; //enabling channel 3 output to pin
     TIM2->CR1 |= TIM_CR1_CEN; //starting timer
