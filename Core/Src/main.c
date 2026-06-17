@@ -12,6 +12,8 @@
 // GLOBAL CONSTANTS
 //====================================================================
 
+#define LOG_SIZE 1000
+
 //====================================================================
 // GLOBAL VARIABLES
 //====================================================================
@@ -35,6 +37,13 @@ float e_one_step = 0.0f;   //initializing previous error variable for one step b
 float e_two_steps = 0.0f;  //initializing previous error variable for two steps back to zero
 float u_one_step = 0.0f;   //initializing previous control output variable for one step back to zero
 float u_two_steps = 0.0f;   //initializing previous control output variable for two steps back to zero
+
+//setting up log arrays
+float command_speed_log[LOG_SIZE];   //array to log command speeds for analysis
+float actual_speed_log[LOG_SIZE];  //array to log feedback speeds for analysis
+float control_output_log[LOG_SIZE];   //array to log control outputs for analysis
+int log_index = 0;   //initializing log index variable to zero
+
 //====================================================================
 // FUNCTION DECLARATIONS
 //====================================================================
